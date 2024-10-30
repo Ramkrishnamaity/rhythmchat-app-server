@@ -10,7 +10,6 @@ import { connectDB } from "../lib/config/Database";
 const app: Application = express();
 const port = process.env.MAIN_SERVER_PORT ?? 4050;
 
-
 connectDB();
 
 app.use(cors({

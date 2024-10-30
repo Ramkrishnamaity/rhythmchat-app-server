@@ -4,7 +4,7 @@ import { NotificationRequestType } from "../lib/types/Requests/User/Notification
 import UserNotificationController from "./controllers/Notiification";
 import { socketMiddleware } from "../lib/utils/Middleware";
 import UserController from "./controllers/User";
-import { sendNotification } from "../lib/utils/PushNotification";
+// import { sendNotification } from "../lib/utils/PushNotification";
 import { connectDB } from "../lib/config/Database";
 
 const app: Application = express();
@@ -47,7 +47,7 @@ io.on("connection", (socket: Socket) => {
             const receiver = UserController.findSocketId(data.receiverId);
             if (receiver) {
                 io.to(receiver).emit("notify", notify);
-                await sendNotification(data.senderId, data.receiverId, "You have new Friend Request.");
+                // await sendNotification(data.senderId, data.receiverId, "You have new Friend Request.");
             }
         } catch (error) {
             console.log(error);
