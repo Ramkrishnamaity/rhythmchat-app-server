@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "A Backend Project in Nodejs for my Realtime Chat Application (RhythmChat).",
   "main": "app.ts",
-  "type": "commonjs",
   "author": "ramkrishna",
   "license": "MIT",
   "scripts": {
