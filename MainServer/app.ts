@@ -3,13 +3,11 @@ import rootRoute from "./routes/Index";
 import logger from "morgan";
 import path from "path";
 import cors from "cors";
-import AdminRouter from "./routes/Admin";
 import ViewRouter from "./routes/View";
 import { connectDB } from "../lib/config/Database";
 
 const app: Application = express();
 const port = process.env.MAIN_SERVER_PORT ?? 4050;
-
 
 connectDB();
 
