@@ -16,5 +16,5 @@
     "skipLibCheck": true            /* Skip type checking all .d.ts files */
   },
   "include": ["**/**/*.ts"],       /* Specify the files to include in the compilation */
-  "exclude": ["node_modules", "uploads"]        /* Specify the files to exclude from the compilation */
+  "exclude": ["node_modules"]        /* Specify the files to exclude from the compilation */
 }
