@@ -1,8 +1,9 @@
 {
   "compilerOptions": {
     "target": "ES2016",             /* Node.js supports modern ECMAScript features */
-    "module": "commonjs",           /* Use CommonJS module system for Node.js */
+    "module": "ESNext",           /* Use CommonJS module system for Node.js */
     "lib": ["es2016"],              /* Include ES2018 library definitions */
+    "moduleResolution": "node", 
     "rootDir": ".",               /* Specify the root folder within your source files */
     "outDir": "dist",              /* Specify an output folder for all emitted files */
     "esModuleInterop": true,        /* Emit additional JavaScript to ease support for importing CommonJS modules */
