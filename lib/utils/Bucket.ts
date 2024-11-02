@@ -15,7 +15,7 @@ async function pushOnBucket(file: Express.Multer.File, directory: string) {
             Bucket: process.env.S3_BUCKET_NAME,
             Key: directory,
             Body: file.buffer,
-            ACL: "public-read",
+            // ACL: "public-read",
         });
 
         await s3Client.send(command);

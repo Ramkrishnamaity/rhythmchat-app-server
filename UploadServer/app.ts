@@ -10,7 +10,7 @@ const port = process.env.UPLOAD_SERVER_PORT ?? 4051;
 connectDB();
 
 app.use(cors({
-	origin: process.env.CLIENT_BASE_URL,
+	origin: "*",
 	credentials: true
 }));
 app.use(logger("dev"));

@@ -12,7 +12,7 @@ const port = process.env.MAIN_SERVER_PORT ?? 4050;
 connectDB();
 
 app.use(cors({
-	origin: process.env.CLIENT_BASE_URL,
+	origin: "*",
 	credentials: true
 }));
 app.use(logger("dev"));

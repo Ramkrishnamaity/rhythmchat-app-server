@@ -74,12 +74,12 @@ const storyUpload = async (req: Request, res: Response<Res<VideoUploadResponce |
 async function fileUp(file: Express.Multer.File, _id: string): Promise<FileUploadResponce> {
 	try {
 		const type = file.mimetype.split("/");
-		const fileName = `${Date.now()}.${type[1]}`;
+		const fileName = `${Date.now()}_${file.originalname}`;
 		const directory = `rhythmchat/${_id}/${type[0]}/${fileName}`;
 
 		await BucketUpload.pushOnBucket(file, directory);
 
-		const url = `${process.env.DIGITALOCEAN_SPACES_URL}/${directory}`;
+		const url = `${process.env.S3_URL}/${directory}`;
 
 		return {
 			url

@@ -18,7 +18,7 @@ const server = app.listen(port, () => {
 
 const io = new Server(server, {
     cors: {
-        origin: process.env.CLIENT_BASE_URL
+        origin: "*"
     }
 });
 
