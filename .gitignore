@@ -17,13 +17,13 @@ node_modules/
 
 dist/
 
-build/firebase-messaging-sw.js
 
 # Optional npm cache directory
 .npm
 
 # dotenv environment variables file
 .env
+firebase-messaging-sw.js
 firebase-sdk.json
 ecosystem.config.js
 
