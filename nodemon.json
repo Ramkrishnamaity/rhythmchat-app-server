@@ -1,0 +1,13 @@
+{
+    "watch": [
+        "lib",
+        "models",
+        "SocketServer",
+        "UploadServer",
+        "MainServer"
+    ],
+    "ext": "ts",
+    "execMap": {
+        "ts": "swc-node"
+    }
+}

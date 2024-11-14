@@ -1,0 +1,48 @@
+version: "3"
+
+networks:
+  rhythmchat:
+    driver: bridge
+
+services:
+  redis:
+    image: redis
+    networks:
+      - rhythmchat
+    container_name: redis
+
+  main-server:
+    build: ./
+    restart: always
+    networks:
+      - rhythmchat
+    depends_on:
+      - redis
+    ports:
+      - 4050:4050
+    container_name: main-server
+    command: npm run dev::main
+
+  socket-server:
+    build: ./
+    restart: always
+    networks:
+      - rhythmchat
+    depends_on:
+      - upload-server
+    ports:
+      - 4051:4051
+    container_name: socket-server
+    command: npm run dev::socket
+
+  upload-server:
+    build: ./
+    restart: always
+    networks:
+      - rhythmchat
+    depends_on:
+      - main-server
+    ports:
+      - 4052:4052
+    container_name: upload-server
+    command: npm run dev::upload
