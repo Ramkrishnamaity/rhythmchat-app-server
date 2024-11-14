@@ -101,6 +101,39 @@ const getConversations = async (req: Request, res: Response<Res<ConversationResp
             },
             {
                 $lookup: {
+                    from: "favorites",
+                    foreignField: "conversationId",
+                    localField: "_id",
+                    as: "favoriteData",
+                    pipeline: [
+                        {
+                            $match: {
+                                userId: new Types.ObjectId(req.User?._id)
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $addFields: {
+                    isFavorite: {
+                        $cond: [
+                            {
+                                $eq: [
+                                    {
+                                        $size: "$favoriteData"
+                                    },
+                                    0
+                                ]
+                            },
+                            false,
+                            true
+                        ]
+                    }
+                }
+            },
+            {
+                $lookup: {
                     from: "messages",
                     foreignField: "_id",
                     localField: "message",
@@ -149,6 +182,7 @@ const getConversations = async (req: Request, res: Response<Res<ConversationResp
             {
                 $project: {
                     members: 0,
+                    favoriteData: 0,
                     userId: 0,
                     message: 0,
                     userId1: 0,
@@ -319,7 +353,7 @@ const favoriteMethod = (req: Request<CommonParamsType>, res: Response<Res>) => {
     }
 };
 
-const getNewConversation = async (conversationId: string, userId?: string): Promise<ConversationResponseType> => {
+const getNewConversation = async (conversationId: string, userId2: string, userId1?: string): Promise<ConversationResponseType> => {
     try {
 
         const data = await ConversationModel.aggregate([
@@ -333,7 +367,7 @@ const getNewConversation = async (conversationId: string, userId?: string): Prom
                     userId: {
                         $cond: [
                             { $eq: ["$isGroup", false] },
-                            new Types.ObjectId(userId),
+                            new Types.ObjectId(userId1),
                             null
                         ]
                     }
@@ -360,6 +394,39 @@ const getNewConversation = async (conversationId: string, userId?: string): Prom
                 $unwind: {
                     path: "$user",
                     preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $lookup: {
+                    from: "favorites",
+                    foreignField: "conversationId",
+                    localField: "_id",
+                    as: "favoriteData",
+                    pipeline: [
+                        {
+                            $match: {
+                                userId: new Types.ObjectId(userId2)
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $addFields: {
+                    isFavorite: {
+                        $cond: [
+                            {
+                                $eq: [
+                                    {
+                                        $size: "$favoriteData"
+                                    },
+                                    0
+                                ]
+                            },
+                            false,
+                            true
+                        ]
+                    }
                 }
             },
             {
@@ -413,6 +480,7 @@ const getNewConversation = async (conversationId: string, userId?: string): Prom
                 $project: {
                     members: 0,
                     userId: 0,
+                    favoriteData: 0,
                     message: 0,
                     userId1: 0,
                     userId2: 0,

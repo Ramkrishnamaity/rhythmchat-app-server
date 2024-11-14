@@ -9,6 +9,7 @@ const UserRouter: Router = Router();
 
 // profile apis
 UserRouter.get("/profile", UserProfileController.getUserProfile);
+UserRouter.get("/profile/:id", UserProfileController.getAnotherProfile);
 UserRouter.put("/profile", UserProfileController.updateProfile);
 UserRouter.get("/device-token/:id", UserProfileController.updateDeviceToken);
 UserRouter.put("/change-password", UserProfileController.updatePassword);

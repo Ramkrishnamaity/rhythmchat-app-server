@@ -4,7 +4,7 @@ import { ResponseCode, ResponseMessage } from "../../../lib/utils/ResponseCode";
 import UserModel from "../../../models/User";
 import { Types } from "mongoose";
 import bcrypt from "bcrypt";
-import { ProfileResponceType } from "../../../lib/types/Responses/User";
+import { AnotherProfileResponceType, ProfileResponceType } from "../../../lib/types/Responses/User";
 import { ResetPasswordParamsType, ResetPasswordRequestType, ResetPasswordType, UpdatePasswordRequestType, UpdateProfileRequestType } from "../../../lib/types/Requests/User/Profile";
 import generateToken, { InputValidator, MailSender } from "../../../lib/utils";
 import { JwtPayload, verify } from "jsonwebtoken";
@@ -39,6 +39,58 @@ const getUserProfile = async (req: Request, res: Response<Res<ProfileResponceTyp
 				status: false,
 				message: ResponseMessage.NOT_FOUND_ERROR
 			});
+
+	} catch (error) {
+		res.status(ResponseCode.SERVER_ERROR).json({
+			status: false,
+			message: ResponseMessage.SERVER_ERROR,
+			error
+		});
+	}
+};
+
+const getAnotherProfile = (req: Request<CommonParamsType, any, any, { isGroup: boolean }>, res: Response<Res<AnotherProfileResponceType>>): void => {
+	try {
+		InputValidator({ ...req.params, ...req.query }, {
+			id: "required",
+			isGroup: "required"
+		}).then(async () => {
+
+			const userData = await UserModel.aggregate([
+				{
+					$match: {
+						_id: new Types.ObjectId(req.params.id)
+					}
+				},
+				{
+					$project: {
+						firstName: 1,
+						lastName: 1,
+						about: 1,
+						image: 1,
+						email: 1
+					}
+				}
+			]);
+
+			userData.length !== 0 ?
+				res.status(ResponseCode.SUCCESS).json({
+					status: true,
+					message: "User Profile Fetched Successfully",
+					data: userData[0]
+				}) :
+				res.status(ResponseCode.NOT_FOUND_ERROR).json({
+					status: false,
+					message: ResponseMessage.NOT_FOUND_ERROR
+				});
+
+		}).catch(error => {
+			res.status(ResponseCode.VALIDATION_ERROR).json({
+				status: false,
+				message: ResponseMessage.VALIDATION_ERROR,
+				error
+			});
+		});
 
 	} catch (error) {
 		res.status(ResponseCode.SERVER_ERROR).json({
@@ -246,7 +298,7 @@ const resetPassword = (req: Request<any, any, ResetPasswordType>, res: Response<
 
 			try {
 				const decrypted = verify(req.body.token, process.env.JWT_SECRET ?? "") as JwtPayload;
-				
+
 				const salt = bcrypt.genSaltSync(10);
 				const hashedPassword = bcrypt.hashSync(req.body.password, salt);
 
@@ -347,6 +399,7 @@ const updateDeviceToken = async (req: Request<CommonParamsType>, res: Response<R
 
 const UserProfileController = {
 	getUserProfile,
+	getAnotherProfile,
 	updateProfile,
 	updateDeviceToken,
 	updatePassword,

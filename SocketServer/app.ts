@@ -71,11 +71,11 @@ io.on("connection", (socket: Socket) => {
             const user1Socket = UserController.findSocketId(user1)
             const user2Socket = UserController.findSocketId(user2)
             if (user1Socket) {
-                const data = await UserConversationController.getNewConversation(conversationId, user2)
+                const data = await UserConversationController.getNewConversation(conversationId, user1, user2)
                 io.to(user1Socket).emit("new-chat", data);
             }
             if (user2Socket) {
-                const data = await UserConversationController.getNewConversation(conversationId, user1)
+                const data = await UserConversationController.getNewConversation(conversationId, user2, user1)
                 io.to(user2Socket).emit("new-chat", data);
             }
         } catch (error) {
@@ -89,7 +89,8 @@ io.on("connection", (socket: Socket) => {
 
     socket.on("notify-group-members", async (conversationId: string) => {
         try {
-            const groupData = await UserConversationController.getNewConversation(conversationId)
+            const userId = UserController.findUserId(socket.id) ?? ''
+            const groupData = await UserConversationController.getNewConversation(conversationId, userId)
             const members = await MemberModel.aggregate([
                 {
                     $match: {

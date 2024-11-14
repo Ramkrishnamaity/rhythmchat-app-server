@@ -5,6 +5,7 @@ export type ConversationResponseType = {
     isGroup: boolean
     name?: string
     image?: string
+    isFavorite: boolean
     description?: string
     messageData: {
         _id: Types.ObjectId

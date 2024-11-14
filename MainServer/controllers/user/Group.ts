@@ -64,6 +64,7 @@ const createGroup = (req: Request<any, any, CreateGroupRequestType>, res: Respon
                 name: conversation.name,
                 description: conversation.description,
                 image: conversation.image,
+                isFavorite: false,
                 createdOn: conversation.createdOn,
                 updatedOn: conversation.updatedOn,
                 messageData: {
