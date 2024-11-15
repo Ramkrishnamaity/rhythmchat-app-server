@@ -35,7 +35,7 @@ io.on("connection", (socket: Socket) => {
     socket.on("user", async (id: string | undefined) => {
         try {
             if (id) {
-                UserController.addUser(id, socket.id);
+                UserController.addUser(id, socket.id, io);
                 const notify = await UserNotificationMethods.fetchNotifies(id);
                 socket.emit("notify", notify);
             }
@@ -133,16 +133,16 @@ io.on("connection", (socket: Socket) => {
         await UserMessageMethods.addMessage(io, message)
     })
 
-    // socket.on('is-online-ques', (userId: string)=> {
-    //     if(UserController.findSocketId(userId)) {
-    //         socket.emit('is-online-ans', true)
-    //     } else {
-    //         socket.emit('is-online-ans', false)
-    //     }
-    // })
+    socket.on('is-online-ques', (userId: string)=> {
+        if(UserController.findSocketId(userId)) {
+            socket.emit('is-online-ans', true)
+        } else {
+            socket.emit('is-online-ans', false)
+        }
+    })
 
     socket.on("disconnect", () => {
-        UserController.removeUser(socket.id);
+        // UserController.removeUser(socket.id, io);
         socket.disconnect();
     });
 });

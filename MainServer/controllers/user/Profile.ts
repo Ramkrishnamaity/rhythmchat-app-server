@@ -4,11 +4,12 @@ import { ResponseCode, ResponseMessage } from "../../../lib/utils/ResponseCode";
 import UserModel from "../../../models/User";
 import { Types } from "mongoose";
 import bcrypt from "bcrypt";
-import { AnotherProfileResponceType, ProfileResponceType } from "../../../lib/types/Responses/User";
+import { AnotherProfileResponceType, GroupProfileResponceType, ProfileResponceType } from "../../../lib/types/Responses/User";
 import { ResetPasswordParamsType, ResetPasswordRequestType, ResetPasswordType, UpdatePasswordRequestType, UpdateProfileRequestType } from "../../../lib/types/Requests/User/Profile";
 import generateToken, { InputValidator, MailSender } from "../../../lib/utils";
 import { JwtPayload, verify } from "jsonwebtoken";
 import BucketUpload from "../../../lib/utils/Bucket";
+import ConversationModel from "../../../models/Conversation";
 
 const getUserProfile = async (req: Request, res: Response<Res<ProfileResponceType>>): Promise<void> => {
 	try {
@@ -49,40 +50,153 @@ const getUserProfile = async (req: Request, res: Response<Res<ProfileResponceTyp
 	}
 };
 
-const getAnotherProfile = (req: Request<CommonParamsType, any, any, { isGroup: boolean }>, res: Response<Res<AnotherProfileResponceType>>): void => {
+const getAnotherProfile = (req: Request<CommonParamsType, any, any, { isGroup: string }>, res: Response<Res<AnotherProfileResponceType | GroupProfileResponceType>>): void => {
 	try {
 		InputValidator({ ...req.params, ...req.query }, {
 			id: "required",
 			isGroup: "required"
 		}).then(async () => {
 
-			const userData = await UserModel.aggregate([
-				{
-					$match: {
-						_id: new Types.ObjectId(req.params.id)
-					}
-				},
-				{
-					$project: {
-						firstName: 1,
-						lastName: 1,
-						about: 1,
-						image: 1,
-						email: 1
-					}
-				}
-			]);
+			let infoData = []
+			if (JSON.parse(req.query.isGroup)) {
 
-			userData.length !== 0 ?
+				infoData = await ConversationModel.aggregate([
+					{
+						$match: {
+							_id: new Types.ObjectId(req.params.id)
+						}
+					},
+					{
+						$lookup: {
+							from: "members",
+							foreignField: "groupId",
+							localField: "_id",
+							as: "members",
+							pipeline: [
+								{
+									$lookup: {
+										from: "users",
+										foreignField: "_id",
+										localField: "userId",
+										as: "user"
+									}
+								},
+								{
+									$unwind: {
+										path: "$user",
+										preserveNullAndEmptyArrays: false
+									}
+								},
+								{
+									$lookup: {
+										from: "notifications",
+										as: "requests",
+										let: { userId: "$userId" },
+										pipeline: [
+											{
+												$match: {
+													$or: [
+														{
+															senderId: new Types.ObjectId(req.User?._id),
+															$expr: {
+																$eq: ["$receiverId", "$$userId"]
+															}
+														},
+														{
+															$expr: {
+																$eq: ["$senderId", "$$userId"]
+															},
+															receiverId: new Types.ObjectId(req.User?._id)
+														}
+													]
+
+												}
+											},
+											{
+												$project: {
+													isAccepted: 1,
+													_id: 0
+												}
+											}
+										]
+									}
+								},
+								{
+									$addFields: {
+										isFriend: {
+											$cond: [
+												{ $eq: [{ $size: "$requests" }, 0] },
+												false,
+												{ $eq: [{ $arrayElemAt: ["$requests.isAccepted", 0] }, true] }
+											]
+										}
+									}
+								},
+								{
+									$project: {
+										type: 1,
+										userId: 1,
+										firstName: "$user.firstName",
+										lastName: "$user.lastName",
+										image: "$user.image",
+										isFriend: 1,
+										createdOn: 1
+									}
+								},
+								{
+									$sort: {
+										createdOn: 1
+									}
+								}
+							]
+						}
+					},
+					{
+						$project: {
+							_id: 0,
+							name: 1,
+							image: 1,
+							description: 1,
+							members: 1,
+							totalMembers: {
+								$size: "$members"
+							},
+							createdOn: 1
+						}
+					}
+				]);
+
+			} else {
+
+				infoData = await UserModel.aggregate([
+					{
+						$match: {
+							_id: new Types.ObjectId(req.params.id)
+						}
+					},
+					{
+						$project: {
+							firstName: 1,
+							lastName: 1,
+							about: 1,
+							image: 1,
+							email: 1
+						}
+					}
+				]);
+			}
+
+			infoData.length !== 0 ?
 				res.status(ResponseCode.SUCCESS).json({
 					status: true,
-					message: "User Profile Fetched Successfully",
-					data: userData[0]
+					message: "Info Fetched Successfully",
+					data: infoData[0]
 				}) :
 				res.status(ResponseCode.NOT_FOUND_ERROR).json({
 					status: false,
 					message: ResponseMessage.NOT_FOUND_ERROR
 				});
+
 
 		}).catch(error => {
 			res.status(ResponseCode.VALIDATION_ERROR).json({

@@ -11,6 +11,8 @@ import NotificationModel from "../../models/Notification";
 import NotifyModel from "../../models/Notify";
 import { pushNotification } from "../../lib/utils/PushNotification";
 import UserModel from "../../models/User";
+import UserController from "./User";
+import { Server } from "socket.io";
 
 const fetchNotification = async (req: Request<any, any, any, CommonQueryParamsType>, res: Response<Res<NotificationResponseType[]>>) => {
     try {
@@ -218,7 +220,7 @@ const RequestAccept = async (id: string) => {
             message: message._id
         });
 
-        return {conversationId: conversation._id.toString() ?? '', user1: data?.senderId.toString() ?? '', user2: data?.receiverId.toString() ?? ''}
+        return { conversationId: conversation._id.toString() ?? '', user1: data?.senderId.toString() ?? '', user2: data?.receiverId.toString() ?? '' }
 
     } catch (error) {
         throw error;
@@ -233,8 +235,28 @@ const RequestReject = async (id: string) => {
     }
 };
 
+const NotifyFriends = async (userId: string, io: Server, isOnline: boolean) => {
+    try {
+        const chats = await ConversationModel.find(
+            {
+                $or: [
+                    { userId1: userId },
+                    { userId2: userId }
+                ]
+            }
+        )
+        for (let ele of chats) {
+            io.to(ele._id.toString()).emit("is-online-ans", isOnline);
+        }
+
+    } catch (error) {
+        throw error;
+    }
+}
+
 const UserNotificationMethods = {
     fetchNotification,
+    NotifyFriends,
     sendNotification,
     fetchNotifies,
     RequestAccept,
