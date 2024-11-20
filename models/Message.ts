@@ -20,6 +20,9 @@ const MessageSchema = new Schema<MessageModelType<CommonModelType & Document["_i
         type: String,
         required: true
     },
+    thumbnail: {
+        type: String
+    },
 	createdOn: {
         type: Date,
         default: Date.now

@@ -5,6 +5,7 @@ export type MessageModelType<T> = T & {
     userId: Types.ObjectId
     type: string
     message: string
+    thumbnail?: string
 }
 
 export type MessageType = {
@@ -18,4 +19,5 @@ export type MessageType = {
     }
     type: string;
     message: string;
+    thumbnail?: string
 }

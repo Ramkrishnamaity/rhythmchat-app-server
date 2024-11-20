@@ -10,6 +10,7 @@ import MemberModel from "../models/Member";
 import { Types } from "mongoose";
 import UserMessageMethods from "./controllers/Message";
 import { MessageType } from "../lib/types/Models/Message";
+import CallManager from "./controllers/Call";
 
 const app: Application = express();
 const port = process.env.SOCKET_SERVER_PORT ?? 4052;
@@ -141,8 +142,10 @@ io.on("connection", (socket: Socket) => {
         }
     })
 
+    CallManager(socket, io)
+
     socket.on("disconnect", () => {
-        // UserController.removeUser(socket.id, io);
+        UserController.removeUser(socket.id, io);
         socket.disconnect();
     });
 });

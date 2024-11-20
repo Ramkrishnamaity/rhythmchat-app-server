@@ -16,7 +16,7 @@ function removeUser(socketId: string, io: Server) {
     userList.delete(socketId)
     userId && socketList.delete(userId)
     console.log("userList", userList);
-    UserNotificationMethods.NotifyFriends(userId ?? '', io, false)
+    userId && UserNotificationMethods.NotifyFriends(userId, io, false)
 }
 
 function findSocketId(userId: string,) {

@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { Server, Socket } from "socket.io";
+import { Server } from "socket.io";
 import MessageModel from "../../models/Message";
 import ConversationModel from "../../models/Conversation";
 import { MessageType } from "../../lib/types/Models/Message";

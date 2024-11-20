@@ -221,7 +221,7 @@ const getSingleConversation = (req: Request<CommonParamsType, any, any, { page: 
         }).then(async () => {
 
             const page = req.query.page || 1;
-            const limit = 20;
+            const limit = 100;
             const skip = (page - 1) * limit;
 
             const data = await MessageModel.aggregate([

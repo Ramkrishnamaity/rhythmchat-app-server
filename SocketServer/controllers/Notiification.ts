@@ -11,7 +11,6 @@ import NotificationModel from "../../models/Notification";
 import NotifyModel from "../../models/Notify";
 import { pushNotification } from "../../lib/utils/PushNotification";
 import UserModel from "../../models/User";
-import UserController from "./User";
 import { Server } from "socket.io";
 
 const fetchNotification = async (req: Request<any, any, any, CommonQueryParamsType>, res: Response<Res<NotificationResponseType[]>>) => {

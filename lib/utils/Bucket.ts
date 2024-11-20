@@ -1,4 +1,5 @@
 import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import fs from "fs"
 
 const s3Client = new S3Client({
     region: process.env.S3_REGION,
@@ -8,17 +9,38 @@ const s3Client = new S3Client({
     }
 });
 
-async function pushOnBucket(file: Express.Multer.File, directory: string) {
+async function pushOnBucket(directory: string, file?: Express.Multer.File, filePath?: string ) {
     try {
 
-        const command = new PutObjectCommand({
-            Bucket: process.env.S3_BUCKET_NAME,
-            Key: directory,
-            Body: file.buffer,
-            // ACL: "public-read",
-        });
+        if(file) {
+            const fileContent = fs.createReadStream(file.path)
 
-        await s3Client.send(command);
+            const command = new PutObjectCommand({
+                Bucket: process.env.S3_BUCKET_NAME,
+                Key: directory,
+                Body: fileContent,
+                // ACL: "public-read",
+            });
+    
+            await s3Client.send(command);
+            
+            fs.unlinkSync(file.path)
+
+        } else if(filePath){
+
+            const fileContent = fs.createReadStream(filePath)
+
+            const command = new PutObjectCommand({
+                Bucket: process.env.S3_BUCKET_NAME,
+                Key: directory,
+                Body: fileContent,
+                // ACL: "public-read",
+            });
+    
+            await s3Client.send(command);
+
+            fs.unlinkSync(filePath)
+        }
 
     } catch (error) {
         console.error("Error On upload: ", error);

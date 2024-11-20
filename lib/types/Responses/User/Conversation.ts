@@ -17,6 +17,7 @@ export type ConversationResponseType = {
         }
         type: string
         message: string
+        thumbnail?: string
         createdOn?: Date
         updatedOn?: Date
         isDeleted?: boolean
@@ -42,6 +43,7 @@ export type SingleConversationResponseType = {
     _id: string
     type: string
     message: string
+    thumbnail?: string
     user: {
         _id: string
         firstName: string

@@ -4,6 +4,8 @@ import { ResponseCode, ResponseMessage } from "../../lib/utils/ResponseCode";
 import { fileSupportedFormat, storySupportedFormat } from "../../lib/utils";
 import { FileUploadResponce, VideoUploadResponce } from "../../lib/types/Responses/User/Upload";
 import BucketUpload from "../../lib/utils/Bucket";
+import ffmpeg from "fluent-ffmpeg"
+import fs from 'fs'
 
 const fileUpload = async (req: Request, res: Response<Res<VideoUploadResponce | FileUploadResponce>>): Promise<void> => {
 	try {
@@ -71,29 +73,58 @@ const storyUpload = async (req: Request, res: Response<Res<VideoUploadResponce |
 	}
 };
 
+async function generateThumbnail(file: Express.Multer.File, dest: string) {
+	return new Promise((resolve, reject) => {
+		ffmpeg(file.path)
+			.thumbnail({
+				timestamps: ["10%"],
+				filename: `/transcodes/${dest}`,
+			})
+			.on("end", resolve)
+			.on("error", reject)
+	})
+}
+
 async function fileUp(file: Express.Multer.File, _id: string): Promise<FileUploadResponce> {
 	try {
 		const type = file.mimetype.split("/");
 		const fileName = `${Date.now()}_${file.originalname}`;
 		const directory = `rhythmchat/${_id}/${type[0]}/${fileName}`;
 
-		await BucketUpload.pushOnBucket(file, directory);
+		await BucketUpload.pushOnBucket(directory, file);
 
 		const url = `${process.env.S3_URL}/${directory}`;
 
 		return {
 			url
 		};
+
 	} catch (error) {
 		throw error;
 	}
 }
 
 async function videoUp(file: Express.Multer.File, _id: string): Promise<VideoUploadResponce> {
-	return {
-		thumbnail: "",
-		url: ""
-	};
+	try {
+		const thumbnailName = `thumbnail_${Date.now()}.png`
+
+		await generateThumbnail(file, thumbnailName)
+
+		const fileName = `${Date.now()}_${file.originalname}`;
+		const thumbnailDirectory = `rhythmchat/${_id}/image/${thumbnailName}`;
+		const fileDirectory = `rhythmchat/${_id}/video/${fileName}`;
+
+		await BucketUpload.pushOnBucket(thumbnailDirectory, undefined, `./transcodes/${thumbnailName}`);
+		await BucketUpload.pushOnBucket(fileDirectory, file);
+
+		return {
+			thumbnail: `${process.env.S3_URL}/${thumbnailDirectory}`,
+			url: `${process.env.S3_URL}/${fileDirectory}`
+		};
+	} catch (error) {
+		console.log("Error in Genarating Thumbnail: ", error)
+		throw error
+	}
 }
 
 async function storyUp(file: Express.Multer.File, _id: string): Promise<VideoUploadResponce> {
