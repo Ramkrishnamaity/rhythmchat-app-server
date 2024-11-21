@@ -12,7 +12,7 @@
     "alpha::main": "dotenv -e .env node ./dist/MainServer/app.js",
     "alpha::socket": "dotenv -e .env node ./dist/SocketServer/app.js",
     "alpha::upload": "dotenv -e .env nodee ./dist/UploadServer/app.js",
-    "move": "cp -R MainServer/views dist/MainServer/views && cp lib/utils/firebase-sdk.json dist/lib/utils/firebase-sdk.json",
+    "move": "cp lib/utils/firebase-sdk.json dist/lib/utils/firebase-sdk.json && cp -r build dist/build",
     "lint": "eslint --fix",
     "build": "tsc -p ."
   },
