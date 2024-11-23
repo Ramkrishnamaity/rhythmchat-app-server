@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ES2016",             /* Node.js supports modern ECMAScript features */
+    "target": "ESNext",             /* Node.js supports modern ECMAScript features */
     "module": "CommonJS",           /* Use CommonJS module system for Node.js */
     "lib": ["es2016"],              /* Include ES2018 library definitions */ 
     "rootDir": ".",               /* Specify the root folder within your source files */
@@ -16,5 +16,5 @@
     "skipLibCheck": true            /* Skip type checking all .d.ts files */
   },
   "include": ["**/**/*.ts"],       /* Specify the files to include in the compilation */
-  "exclude": ["node_modules"]        /* Specify the files to exclude from the compilation */
+  "exclude": ["node_modules", "build"]        /* Specify the files to exclude from the compilation */
 }

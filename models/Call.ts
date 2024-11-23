@@ -1,10 +1,9 @@
 import { Document, Schema, model } from "mongoose";
 import { CommonModelType } from "../lib/types/Models";
-import { MemberModelType } from "../lib/types/Models/Member";
 import { CallModelType } from "../lib/types/Models/Call";
 
 const CallSchema = new Schema<CallModelType<CommonModelType & Document["_id"]>>({
-    hostId: {
+    host: {
         type: Schema.Types.ObjectId,
         required: true
     },
@@ -21,6 +20,10 @@ const CallSchema = new Schema<CallModelType<CommonModelType & Document["_id"]>>(
     },
     callDuration: {
         type: Number
+    },
+    isActive: {
+        type: Boolean,
+        default: true
     },
 	createdOn: {
         type: Date,

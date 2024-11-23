@@ -2,11 +2,13 @@ import { Server, Socket } from "socket.io";
 import UserController from "./User";
 import CallModel from "../../models/Call";
 import { Types } from "mongoose";
+import ConversationModel from "../../models/Conversation";
+import MemberModel from "../../models/Member";
 
 
 export default function CallManager(socket: Socket, io: Server) {
 
-    socket.on('room-join', async ({roomId, peerId}) => {
+    socket.on('room-join', async ({ roomId, peerId }) => {
         try {
             socket.join(roomId)
             const userId = UserController.findUserId(socket.id)
@@ -27,7 +29,7 @@ export default function CallManager(socket: Socket, io: Server) {
                         _id: 0,
                         roomId: 1,
                         users: 1,
-                        hostId: 1
+                        host: 1
                     },
                     new: true
                 }
@@ -38,20 +40,51 @@ export default function CallManager(socket: Socket, io: Server) {
         }
     })
 
-    socket.on('room-invite', async ({roomId, userId}) => {
+    socket.on('room-invite', async ({ roomId, isGroup, conversationId, profile }) => {
         try {
-            const hostId = UserController.findUserId(socket.id)
             await CallModel.create({
-                hostId,
+                host: conversationId,
                 roomId,
                 users: []
             })
             socket.emit("room-created", roomId)
-            const userSocket = UserController.findSocketId(userId)
-            if (userSocket) {
-                io.to(userSocket).emit('room-request', roomId)
+            const hostId = UserController.findUserId(socket.id)
+            if (JSON.parse(isGroup)) {
+                const users = await MemberModel.find(
+                    {
+                        groupId: conversationId,
+                        userId: { $ne: hostId }
+                    }
+                )
+                if (users.length > 0) {
+                    for (let user of users) {
+                        const userSocket = UserController.findSocketId(user.toString())
+                        if (userSocket) {
+                            const isOnCall = await CallModel.findOne(
+                                {
+                                    users: { $in: user.toString() },
+                                    isActive: true
+                                }
+                            )
+                            !isOnCall && io.to(userSocket).emit('room-request', { roomId, profile })
+                        }
+                    }
+                }
             } else {
-                console.log("notify User Because user is Offline")
+                const conversation = await ConversationModel.findById(conversationId)
+                if (conversation && conversation.userId1 && conversation.userId2) {
+                    const user = hostId !== conversation.userId1.toString() ? conversation.userId2.toString() : conversation.userId1.toString()
+                    const userSocket = UserController.findSocketId(user)
+                    if (userSocket) {
+                        const isOnCall = await CallModel.findOne(
+                            {
+                                users: { $in: user.toString() },
+                                isActive: true
+                            }
+                        )
+                        !isOnCall && io.to(userSocket).emit('room-request', { roomId, profile })
+                    }
+                }
             }
         } catch (error) {
             console.log(error, "in Room invite")
