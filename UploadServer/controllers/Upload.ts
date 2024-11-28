@@ -4,8 +4,10 @@ import { ResponseCode, ResponseMessage } from "../../lib/utils/ResponseCode";
 import { fileSupportedFormat, storySupportedFormat } from "../../lib/utils";
 import { FileUploadResponce, VideoUploadResponce } from "../../lib/types/Responses/User/Upload";
 import BucketUpload from "../../lib/utils/Bucket";
-import ffmpeg from "fluent-ffmpeg"
-import fs from 'fs'
+import TranscodingMethods from "../../lib/utils/Transcoding";
+import * as fs from "fs"
+import { ffmpegELE, ffmpegPlaylist } from "../../lib/types/Common/Transcode";
+
 
 const fileUpload = async (req: Request, res: Response<Res<VideoUploadResponce | FileUploadResponce>>): Promise<void> => {
 	try {
@@ -46,7 +48,7 @@ const storyUpload = async (req: Request, res: Response<Res<VideoUploadResponce |
 		if (req.file) {
 			const type = req.file.mimetype.split("/")[0];
 			if (storySupportedFormat.includes(type)) {
-				const data = (type === "video") ? await videoUp(req.file, req.User?._id ?? "") : await fileUp(req.file, req.User?._id ?? "");
+				const data = (type === "video") ? await storyUp(req.file, req.User?._id ?? "") : await fileUp(req.file, req.User?._id ?? "");
 				res.status(ResponseCode.SUCCESS).json({
 					status: true,
 					message: "File Uploaded Successfully.",
@@ -73,17 +75,6 @@ const storyUpload = async (req: Request, res: Response<Res<VideoUploadResponce |
 	}
 };
 
-async function generateThumbnail(file: Express.Multer.File, dest: string) {
-	return new Promise((resolve, reject) => {
-		ffmpeg(file.path)
-			.thumbnail({
-				timestamps: ["10%"],
-				filename: `/transcodes/${dest}`,
-			})
-			.on("end", resolve)
-			.on("error", reject)
-	})
-}
 
 async function fileUp(file: Express.Multer.File, _id: string): Promise<FileUploadResponce> {
 	try {
@@ -108,7 +99,7 @@ async function videoUp(file: Express.Multer.File, _id: string): Promise<VideoUpl
 	try {
 		const thumbnailName = `thumbnail_${Date.now()}.png`
 
-		await generateThumbnail(file, thumbnailName)
+		await TranscodingMethods.generateThumbnail(file, thumbnailName)
 
 		const fileName = `${Date.now()}_${file.originalname}`;
 		const thumbnailDirectory = `rhythmchat/${_id}/image/${thumbnailName}`;
@@ -122,16 +113,84 @@ async function videoUp(file: Express.Multer.File, _id: string): Promise<VideoUpl
 			url: `${process.env.S3_URL}/${fileDirectory}`
 		};
 	} catch (error) {
-		console.log("Error in Genarating Thumbnail: ", error)
 		throw error
 	}
 }
 
 async function storyUp(file: Express.Multer.File, _id: string): Promise<VideoUploadResponce> {
-	return {
-		thumbnail: "",
-		url: ""
-	};
+
+	try {
+
+		const fileName = `story_${Date.now()}`;
+		const fileDirectory = `rhythmchat/${_id}/video/${fileName}`;
+
+		fs.mkdirSync(`./transcodes/${fileName}`)
+		const list: ffmpegELE[] = [
+			{
+				name: "high",
+				resolution: "960x540",
+				video_bitrate: 600,
+				video_codec: "libx264",
+				audio_bitrate: 128,
+				audio_codec: "aac",
+				bandswith: 3216424
+			},
+			{
+				name: "mid",
+				resolution: "960x540",
+				video_bitrate: 400,
+				video_codec: "libx264",
+				audio_bitrate: 96,
+				audio_codec: "aac",
+				bandswith: 2177116
+			},
+			{
+				name: "low",
+				resolution: "960x540",
+				video_bitrate: 200,
+				video_codec: "libx264",
+				audio_bitrate: 64,
+				audio_codec: "aac",
+				bandswith: 541052
+			}
+		]
+
+		const playlistPaths: ffmpegPlaylist[] = []
+
+		let flag = true
+		for (const ele of list) {
+			flag = await TranscodingMethods.generateABR(fileName, file.path, ele, playlistPaths)
+		}
+
+		if (flag) {
+			await TranscodingMethods.createMasterPlaylist(fileName, playlistPaths)
+
+			const files = fs.readdirSync(`./transcodes/${fileName}`)
+			for (const file of files) {
+				await BucketUpload.pushOnBucket(fileDirectory, undefined, `./transcodes/${fileName}/${file}`)
+			}
+
+		} else {
+			throw new Error("Error in ABR..!")
+		}
+
+		const thumbnailName = `thumbnail_${Date.now()}.png`
+		const thumbnailDirectory = `rhythmchat/${_id}/image/${thumbnailName}`;
+
+		await TranscodingMethods.generateThumbnail(file, thumbnailName)
+		await BucketUpload.pushOnBucket(thumbnailDirectory, undefined, `./transcodes/${thumbnailName}`)
+
+		// remove the main file stored in disk 
+		fs.unlinkSync(file.path)
+
+		return {
+			thumbnail: `${process.env.S3_URL}/${thumbnailDirectory}`,
+			url: `${process.env.S3_URL}/${fileDirectory}/playlist.m3u8`
+		}
+
+	} catch (error) {
+		throw error;
+	}
 }
 
 const UploadController = {
