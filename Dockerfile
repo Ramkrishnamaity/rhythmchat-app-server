@@ -12,12 +12,13 @@ WORKDIR /usr/app/rhythmchat
 # #     rm -rf /var/lib/apt/lists/*; \
 # # fi
 
-COPY package.json .
-COPY yarn.lock .
-
-# RUN npm install yarn
+COPY package.json yarn.lock .
 
 RUN yarn
 
 COPY . .
+
+EXPOSE 4050 4051 4052
+
+CMD ["./start.sh"]
 
