@@ -18,7 +18,7 @@ RUN yarn
 
 COPY . .
 
-EXPOSE 4050 4051 4052
+# EXPOSE 4050 4051 4052
 
-CMD ["./start.sh"]
+# CMD ["./start.sh"]
 
